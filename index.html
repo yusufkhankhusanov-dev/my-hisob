@@ -19,7 +19,6 @@ $('addPayment').onclick=()=>form('To‘lov: '+current.nomi,'<label>Guruh</label>
 $('closeForm').onclick=()=>$('formModal').classList.add('hidden');$('closeDetail').onclick=()=>$('detail').classList.add('hidden');$('search').oninput=render;
 $('login').onsubmit=async e=>{e.preventDefault();let {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)notice(error.message,true)};
 $('logout').onclick=()=>sb.auth.signOut();sb.auth.onAuthStateChange((event,session)=>{let ok=!!session;$('auth').classList.toggle('hidden',ok);$('app').classList.toggle('hidden',!ok);$('logout').classList.toggle('hidden',!ok);if(ok)setTimeout(load,0);else{clients=[];orders=[];payments=[];current=null}});sb.auth.getSession().then(({data})=>{if(data.session)load()});
-</script></body></html>
 $('forgotPassword').onclick = async () => {
   const email = $('email').value.trim();
 
