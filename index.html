@@ -212,7 +212,24 @@ function render(){let q=$('search').value.toLowerCase().trim(),td=0,tc=0;$('clie
 function renderDetail(){$('detailTitle').textContent=current.nomi;$('detailMeta').textContent='INN: '+current.inn+' • '+(current.manzil||'Manzil kiritilmagan');$('groupPanels').innerHTML=['A','B'].map(g=>{let x=calc(current,g);return '<div class="card"><h2>'+g+' GURUH — '+status(x.debt-x.credit)+'</h2><div class="scroll"><table><thead><tr><th>Sana</th><th>Faktura</th><th>Buyurtma</th><th>Hisoblangan to‘lov</th><th>Qoldiq</th><th>Muddat</th></tr></thead><tbody>'+x.rows.map(o=>'<tr><td>'+esc(o.sana)+'</td><td>'+esc(o.faktura)+'</td><td>'+money(o.summa)+'</td><td>'+money(o.applied)+'</td><td>'+status(o.remaining,o.muddat)+'</td><td>'+esc(o.muddat)+'</td></tr>').join('')+'</tbody></table></div></div>'}).join('');let ids=new Map(orders.map(o=>[o.id,o]));$('payments').innerHTML=payments.filter(p=>ids.has(p.buyurtma_id)&&ids.get(p.buyurtma_id).inn===current.inn).sort((a,b)=>b.sana.localeCompare(a.sana)).map(p=>'<tr><td>'+esc(p.sana)+'</td><td>'+esc(ids.get(p.buyurtma_id).guruh)+'</td><td>'+money(p.summa)+'</td><td>'+esc(p.izoh)+'</td></tr>').join('')}
 function form(title,html,save){$('formTitle').textContent=title;$('entryForm').innerHTML=html+'<button type="submit">Saqlash</button>';$('formModal').classList.remove('hidden');$('entryForm').onsubmit=async e=>{e.preventDefault();let btn=$('entryForm').querySelector('button[type=submit]');btn.disabled=true;try{await save(new FormData(e.target));$('formModal').classList.add('hidden');await load()}catch(err){showPremiumToast(err.message||'Xatolik yuz berdi',true)}finally{btn.disabled=false}}}
 const field=(label,name,type='text',required=true)=>'<label>'+label+'</label><input name="'+name+'" type="'+type+'" '+(required?'required':'')+'>';
-$('addClient').onclick=()=>form('Kontragent qo‘shish',field('INN','inn')+field('Nomi','nomi')+field('Manzil','manzil','text',false),async f=>{let r=await sb.from('kontragentlar').insert({inn:f.get('inn').trim(),nomi:f.get('nomi').trim(),manzil:f.get('manzil')});if(r.error)throw r.error});
+$('addClient').onclick=()=>{
+ const hududlar=REGIONS.map(r=>'<option value="'+safe(r)+'">'+safe(r)+'</option>').join('');
+ const hududTanlash='<label for="newClientRegion">Hudud (majburiy)</label><select id="newClientRegion" name="region" required><option value="" selected disabled>Viloyat yoki shaharni tanlang</option>'+hududlar+'</select>';
+ form('Kontragent qo‘shish',field('INN','inn')+field('Nomi','nomi')+field('Manzil','manzil','text',false)+hududTanlash,async f=>{
+  const inn=String(f.get('inn')||'').trim(),nomi=String(f.get('nomi')||'').trim(),manzil=String(f.get('manzil')||'').trim(),region=String(f.get('region')||'');
+  if(!REGIONS.includes(region))throw Error('Hududni faqat ro‘yxatdan tanlang.');
+  if(!inn||!nomi)throw Error('INN va kontragent nomini kiriting.');
+  const existing=await sb.from('kontragentlar').select('id').eq('inn',inn).limit(1);
+  if(existing.error)throw existing.error;
+  if(existing.data?.length)throw Error('Bu INN bilan kontragent avval kiritilgan.');
+  const created=await sb.from('kontragentlar').insert({inn,nomi,manzil}).select('id').single();
+  if(created.error)throw created.error;
+  const saved=await sb.from('control_kontragent_meta').upsert({inn,region,manzil:manzil||null},{onConflict:'inn'});
+  if(saved.error)throw Error('Kontragent yaratildi, ammo hududni saqlashda xatolik: '+saved.error.message+'. Qayta kontragent yaratmang; hududni sozlash kerak.');
+  showPremiumToast('Kontragent '+region+' hududiga biriktirildi.');
+  if(typeof reload==='function')setTimeout(()=>reload(),50);
+ });
+};
 $('addOrder').onclick=()=>form('Buyurtma: '+current.nomi,'<label>Guruh</label><select name="guruh"><option>A</option><option>B</option></select>'+field('Faktura','faktura','text',false)+field('Summa (so‘m)','summa','number')+'<label>To‘lov sharti</label><select name="tolov_sharti"><option>50%</option><option>100%</option></select>'+field('Sana','sana','date'),async f=>{let r=await sb.from('buyurtmalar').insert({inn:current.inn,kontragent:current.nomi,kontragent_id:current.id,guruh:f.get('guruh'),faktura:f.get('faktura'),summa:Number(f.get('summa')),tolov_sharti:f.get('tolov_sharti'),sana:f.get('sana')});if(r.error)throw r.error});
 $('addPayment').onclick=()=>form('To‘lov: '+current.nomi,'<label>Guruh</label><select name="guruh"><option>A</option><option>B</option></select>'+field('Summa (so‘m)','summa','number')+field('Sana','sana','date')+field('Izoh','izoh','text',false),async f=>{let g=f.get('guruh'),x=calc(current,g);if(!x.rows.length)throw Error('Avval ushbu guruhga buyurtma kiriting.');let target=x.rows.find(o=>o.remaining>0)||x.rows[x.rows.length-1];let r=await sb.from('tolovlar').insert({buyurtma_id:target.id,summa:Number(f.get('summa')),sana:f.get('sana'),izoh:f.get('izoh')});if(r.error)throw r.error});
 $('closeForm').onclick=()=>$('formModal').classList.add('hidden');$('closeDetail').onclick=()=>$('detail').classList.add('hidden');$('search').oninput=render;
