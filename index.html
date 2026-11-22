@@ -677,7 +677,7 @@ function closeProfile(){editingProfile='';document.getElementById('nx-profile-ov
 let userCache=[],editingProfile='';
 async function openProfile(id){const u=userCache.find(x=>x.user_id===id);if(!u||u.role==='super_admin')return;editingProfile=id;document.getElementById('nx-profile-name').value=u.full_name||'';document.getElementById('nx-profile-region').value=u.region||'';document.getElementById('nx-profile-active').checked=u.is_active!==false;document.getElementById('nx-profile-overlay').hidden=false}
 async function saveProfile(){if(!editingProfile)return;const full_name=document.getElementById('nx-profile-name').value.trim(),region=document.getElementById('nx-profile-region').value,is_active=document.getElementById('nx-profile-active').checked;if(!full_name||!region){status('Ism va hududni kiriting.',true);return}const b=document.getElementById('nx-profile-save');b.disabled=true;try{await api('navorix-manage-users',{action:'update_user',user_id:editingProfile,full_name,region,is_active});closeProfile();status('Foydalanuvchi ma’lumotlari saqlandi.');await list()}catch(err){status(err.message,true)}finally{b.disabled=false}}
-async function removeUser(id){const u=userCache.find(x=>x.user_id===id);if(!u||u.role==='super_admin')return;if(!confirm('«'+(u.full_name||'Xodim')+'» foydalanuvchisini o‘chirasizmi? Uning tizimga kirishi bloklanadi, moliyaviy yozuvlari saqlanadi.'))return;try{await api('navorix-manage-users',{action:'deactivate_user',user_id:id});closeEditor();closeProfile();status('Foydalanuvchi bloklandi. Moliyaviy ma’lumotlar saqlandi.');await list()}catch(err){status(err.message,true)}}
+async function removeUser(id){const u=userCache.find(x=>x.user_id===id);if(!u||u.role==='super_admin')return;if(!await nxConfirmRemove(u.full_name||'Xodim'))return;try{await api('navorix-manage-users',{action:'deactivate_user',user_id:id});closeEditor();closeProfile();status('Foydalanuvchi bloklandi. Moliyaviy ma’lumotlar saqlandi.');await list()}catch(err){status(err.message,true)}}
 
 async function list(){const box=document.getElementById('nx-list');if(!box)return;box.textContent='Yuklanmoqda...';try{const data=await api('navorix-manage-users',{action:'list'});const users=Array.isArray(data)?data:(data.users||data.data||[]);if(!Array.isArray(users))throw Error('Foydalanuvchilar ro‘yxati formati mos emas');userCache=users;box.innerHTML=users.map(u=>`<div class="nx-user"><div class="nx-user-info"><div class="nx-avatar">${e((u.full_name||'X').trim().slice(0,1).toUpperCase())}</div><div><b>${e(u.full_name||'Nomsiz')}</b><div class="ent-muted">${e(u.region||'Hudud belgilanmagan')} · ${e(u.role||'xodim')}</div></div></div><div class="nx-user-actions"><span class="nx-state ${u.is_active===false?'nx-off':''}">${u.is_active===false?'Bloklangan':'Faol'}</span>${u.role==='super_admin'?'<span class="nx-admin-label">Bosh administrator</span>':`<button class="nx-outline" data-nx-profile="${e(u.user_id)}">Tahrirlash</button><button class="nx-action" data-nx-user="${e(u.user_id)}" data-nx-name="${e(u.full_name)}">Huquqlar</button><button class="nx-danger" data-nx-remove="${e(u.user_id)}">O‘chirish</button>`}</div></div>`).join('')||'Xodimlar yo‘q'}catch(err){box.textContent=err.message;status(err.message,true)}}
 
@@ -758,4 +758,36 @@ setTimeout(check,450);
  document.addEventListener('click',e=>{if(!e.target.closest('.nx-region-widget'))closeAll()});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
 })();
-</script></body></html>
+</script>
+<style>
+#nx-remove-overlay{position:fixed;inset:0;z-index:999999;background:rgba(10,24,48,.46);display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;backdrop-filter:blur(3px)}
+#nx-remove-overlay.nx-visible{display:flex}
+#nx-remove-dialog{width:min(100%,390px);background:#fff;border-radius:17px;padding:24px;box-shadow:0 22px 70px #0a183044;color:#172b4d;box-sizing:border-box;font-family:inherit}
+#nx-remove-dialog h3{font-size:18px;line-height:1.35;margin:0 0 10px;font-weight:750}
+#nx-remove-dialog p{font-size:13px;line-height:1.6;color:#58677d;margin:0 0 22px}
+#nx-remove-dialog .nx-remove-actions{display:flex;justify-content:flex-end;gap:9px}
+#nx-remove-dialog button{margin:0;padding:10px 16px;border-radius:9px;font-weight:650;font-size:13px;cursor:pointer}
+#nx-remove-cancel{background:#f2f5fa;color:#203552;border:1px solid #dce4ef}
+#nx-remove-accept{background:#d9364b;color:white;border:1px solid #d9364b}
+#nx-remove-dialog button:focus-visible{outline:3px solid #75a8ff;outline-offset:2px}
+</style>
+<div id="nx-remove-overlay" aria-hidden="true"><div id="nx-remove-dialog" role="alertdialog" aria-modal="true" aria-labelledby="nx-remove-title" aria-describedby="nx-remove-description"><h3 id="nx-remove-title">Xodimni o‘chirish</h3><p id="nx-remove-description"></p><div class="nx-remove-actions"><button type="button" id="nx-remove-cancel">Bekor qilish</button><button type="button" id="nx-remove-accept">O‘chirish</button></div></div></div>
+<script>
+function nxConfirmRemove(name){
+  return new Promise(resolve=>{
+    const overlay=document.getElementById('nx-remove-overlay');
+    const desc=document.getElementById('nx-remove-description');
+    const cancel=document.getElementById('nx-remove-cancel');
+    const accept=document.getElementById('nx-remove-accept');
+    const previous=document.activeElement;
+    desc.textContent='«'+name+'» foydalanuvchisini o‘chirasizmi? Uning tizimga kirishi bloklanadi, moliyaviy yozuvlari saqlanadi.';
+    overlay.classList.add('nx-visible');overlay.setAttribute('aria-hidden','false');cancel.focus();
+    function done(value){overlay.classList.remove('nx-visible');overlay.setAttribute('aria-hidden','true');cancel.removeEventListener('click',onCancel);accept.removeEventListener('click',onAccept);overlay.removeEventListener('click',onOutside);document.removeEventListener('keydown',onKey);if(previous&&previous.isConnected)previous.focus();resolve(value)}
+    function onCancel(){done(false)}function onAccept(){done(true)}
+    function onOutside(e){if(e.target===overlay)done(false)}
+    function onKey(e){if(e.key==='Escape'){e.preventDefault();done(false)}else if(e.key==='Tab'){if(e.shiftKey&&document.activeElement===cancel){e.preventDefault();accept.focus()}else if(!e.shiftKey&&document.activeElement===accept){e.preventDefault();cancel.focus()}}}
+    cancel.addEventListener('click',onCancel);accept.addEventListener('click',onAccept);overlay.addEventListener('click',onOutside);document.addEventListener('keydown',onKey);
+  });
+}
+</script>
+</body></html>
