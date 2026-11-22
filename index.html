@@ -875,4 +875,52 @@ function nxConfirmRemove(name){
   });
 })();
 </script>
+
+<style>
+/* NAVORIX — yagona zamonaviy tanlash ro‘yxatlari */
+.nx-choice{position:relative;display:inline-block;vertical-align:middle;min-width:155px;max-width:100%;width:100%;font:inherit}
+.nx-choice>select{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important;left:0;top:0;margin:0!important}
+.nx-choice-button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;background:#fff!important;color:#183154!important;border:1px solid #cbd9ea!important;border-radius:11px!important;padding:11px 13px!important;margin:0!important;font:inherit;min-height:42px;box-shadow:0 1px 3px #16365a0b;transition:border-color .15s,box-shadow .15s}
+.nx-choice-button:hover,.nx-choice.nx-open .nx-choice-button{border-color:#3983e5!important;box-shadow:0 0 0 3px #3b82f615}
+.nx-choice-button .nx-chevron{width:8px;height:8px;border-right:2px solid #607997;border-bottom:2px solid #607997;transform:rotate(45deg);flex:none;margin-right:3px;margin-top:-4px}
+.nx-choice-panel{position:fixed;z-index:999999;background:#fff;border:1px solid #dce6f4;border-radius:13px;box-shadow:0 16px 42px #0b23422c;padding:7px;display:none;box-sizing:border-box;min-width:180px}
+.nx-choice-panel.nx-visible{display:block}
+.nx-choice-search{width:100%!important;box-sizing:border-box;background:#f5f8fd!important;border:1px solid #dce6f4!important;border-radius:9px!important;padding:10px!important;margin:0 0 6px!important;font:inherit;color:#183154!important}
+.nx-choice-options{max-height:235px;overflow-y:auto;overscroll-behavior:contain}
+.nx-choice-option{width:100%;display:block;text-align:left;border:0!important;background:transparent!important;color:#233a59!important;padding:10px 11px!important;margin:1px 0!important;border-radius:8px!important;font:inherit;cursor:pointer}
+.nx-choice-option:hover,.nx-choice-option:focus{background:#eaf2ff!important;color:#135fbe!important;outline:none}
+.nx-choice-option.nx-selected{background:#eaf2ff!important;color:#135fbe!important;font-weight:700}
+.nx-choice-empty{padding:12px;color:#74849a;font-size:13px}
+</style>
+<script>
+/* Native select qiymatlari va change hodisalari saqlanadi. */
+(function(){
+ const enhanced=new WeakSet();let active=null;
+ const panel=document.createElement('div');panel.className='nx-choice-panel';panel.setAttribute('role','listbox');
+ const search=document.createElement('input');search.className='nx-choice-search';search.placeholder='Qidirish...';search.setAttribute('aria-label','Ro‘yxatdan qidirish');
+ const options=document.createElement('div');options.className='nx-choice-options';panel.append(search,options);document.body.append(panel);
+ function close(){panel.classList.remove('nx-visible');if(active){active.wrap.classList.remove('nx-open');active.btn.setAttribute('aria-expanded','false');active=null}}
+ function render(){if(!active)return;const {sel}=active;const q=search.value.trim().toLocaleLowerCase('uz');options.replaceChildren();let count=0;
+  for(const opt of sel.options){if(opt.hidden||opt.disabled)continue;if(q&&!opt.textContent.toLocaleLowerCase('uz').includes(q))continue;count++;
+   const item=document.createElement('button');item.type='button';item.className='nx-choice-option'+(opt.selected?' nx-selected':'');item.textContent=opt.textContent;item.setAttribute('role','option');item.setAttribute('aria-selected',String(opt.selected));
+   item.addEventListener('click',()=>{sel.value=opt.value;sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}));active.btn.querySelector('.nx-choice-label').textContent=sel.selectedOptions[0]?.textContent||'Tanlang';close();});options.append(item);
+  }if(!count){const empty=document.createElement('div');empty.className='nx-choice-empty';empty.textContent='Natija topilmadi';options.append(empty)}
+ }
+ function position(){if(!active)return;const r=active.btn.getBoundingClientRect();const below=innerHeight-r.bottom;const height=Math.min(330,innerHeight-24);const top=below>=Math.min(height,240)||below>=r.top?r.bottom+5:Math.max(8,r.top-height-5);panel.style.left=Math.max(8,Math.min(r.left,innerWidth-Math.max(r.width,180)-8))+'px';panel.style.top=top+'px';panel.style.width=Math.min(Math.max(r.width,180),innerWidth-16)+'px';panel.style.maxHeight=Math.max(100,innerHeight-top-8)+'px';}
+ function enhance(sel){if(enhanced.has(sel)||sel.multiple||sel.size>1||sel.closest('.nx-choice'))return;enhanced.add(sel);
+  const wrap=document.createElement('span');wrap.className='nx-choice';const cs=getComputedStyle(sel);if(cs.width&&cs.width!=='auto')wrap.style.width=cs.width;
+  sel.parentNode.insertBefore(wrap,sel);wrap.append(sel);const btn=document.createElement('button');btn.type='button';btn.className='nx-choice-button';btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');
+  const label=document.createElement('span');label.className='nx-choice-label';const chevron=document.createElement('span');chevron.className='nx-chevron';btn.append(label,chevron);wrap.append(btn);
+  const sync=()=>{label.textContent=sel.selectedOptions[0]?.textContent||'Tanlang';btn.disabled=sel.disabled;};sync();sel.addEventListener('change',sync);
+  const observer=new MutationObserver(sync);observer.observe(sel,{childList:true,subtree:true,attributes:true,attributeFilter:['selected','disabled','hidden']});
+  btn.addEventListener('click',()=>{if(active?.sel===sel){close();return}close();active={sel,btn,wrap};wrap.classList.add('nx-open');btn.setAttribute('aria-expanded','true');search.value='';render();panel.classList.add('nx-visible');position();search.focus();});
+ }
+ search.addEventListener('input',render);search.addEventListener('keydown',e=>{if(e.key==='Escape'){close();return}if(e.key==='Enter'){e.preventDefault();options.querySelector('.nx-choice-option')?.click()}});
+ document.addEventListener('pointerdown',e=>{if(active&&!panel.contains(e.target)&&!active.wrap.contains(e.target))close()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+ window.addEventListener('resize',position);window.addEventListener('scroll',()=>{if(active)position()},true);
+ function scan(root=document){if(root.matches?.('select'))enhance(root);root.querySelectorAll?.('select').forEach(enhance)}
+ scan();const mo=new MutationObserver(records=>{for(const r of records){for(const n of r.addedNodes){if(n.nodeType===1)scan(n)}}});mo.observe(document.body,{childList:true,subtree:true});
+})();
+</script>
 </body></html>
