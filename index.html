@@ -627,7 +627,29 @@ async function list(){const box=document.getElementById('nx-list');if(!box)retur
 async function create(){const name=document.getElementById('nx-name').value.trim(),email=document.getElementById('nx-email').value.trim(),password=document.getElementById('nx-password').value,region=document.getElementById('nx-region').value;if(!name||!email||!region||password.length<12){status('Ism, pochta, hudud va kamida 12 belgili parolni kiriting.',true);return}const b=document.getElementById('nx-create');b.disabled=true;try{await api('navorix-create-user',{full_name:name,email,password,region});document.getElementById('nx-password').value='';status('Xodim yaratildi. Endi uning huquqlarini belgilang.');await list()}catch(err){status(err.message,true)}finally{b.disabled=false}}
 async function edit(id,name){checkedUser=id;document.getElementById('nx-editor').style.display='block';document.getElementById('nx-editor-title').textContent=name+' — huquqlar';document.querySelectorAll('#nx-editor input[type=checkbox]').forEach(x=>x.checked=false);try{const data=await api('navorix-manage-users',{action:'get_permissions',user_id:id});const rows=Array.isArray(data)?data:(data.permissions||data.data||[]);if(!Array.isArray(rows))throw Error('Huquqlar javobi noto‘g‘ri');rows.forEach(p=>{const tr=[...document.querySelectorAll('[data-nx-section]')].find(x=>x.dataset.nxSection===p.section);if(!tr)return;['view','create','edit','delete'].forEach(a=>{tr.querySelector('[data-nx-action="'+a+'"]').checked=!!p['can_'+a]})});status('Huquqlar yuklandi.')}catch(err){checkedUser='';status(err.message,true)}}
 async function save(){if(!checkedUser)return;const permissions=[...document.querySelectorAll('[data-nx-section]')].map(tr=>{const o={section:tr.dataset.nxSection};['view','create','edit','delete'].forEach(a=>o['can_'+a]=tr.querySelector('[data-nx-action="'+a+'"]').checked);return o});const b=document.getElementById('nx-save');b.disabled=true;try{await api('navorix-manage-users',{action:'permissions',user_id:checkedUser,permissions});status('Huquqlar saqlandi.')}catch(err){status(err.message,true)}finally{b.disabled=false}}
-async function check(){const {data:{session}}=await sb.auth.getSession();if(!session){isAdmin=false;checkedUser='';document.getElementById('nx-users')?.remove();return}const {data,error}=await sb.from('navorix_users').select('role,is_active').eq('user_id',session.user.id).maybeSingle();isAdmin=!error&&data?.role==='super_admin'&&data.is_active===true;shell()}
-const observer=new MutationObserver(()=>{if(isAdmin&&document.getElementById('ent-settings')&&!document.getElementById('nx-users'))shell()});observer.observe(document.body,{subtree:true,childList:true});sb.auth.onAuthStateChange(()=>setTimeout(check,350));setTimeout(check,450);
+async function check(){
+ const result=await sb.auth.getSession();const session=result.data?.session;
+ if(!session){isAdmin=false;checkedUser='';document.getElementById('nx-users')?.remove();return}
+ const {data,error}=await sb.from('navorix_users').select('role,is_active').eq('user_id',session.user.id).maybeSingle();
+ isAdmin=!error&&data?.role==='super_admin'&&data.is_active===true;
+ // Agar profilni o‘qishda xatolik bo‘lsa, muammoni yashirmaymiz.
+ const host=document.getElementById('ent-settings');
+ if(!isAdmin&&host){
+  let msg=document.getElementById('nx-profile-error');
+  if(!msg){msg=document.createElement('div');msg.id='nx-profile-error';msg.className='ent-card';host.appendChild(msg)}
+  msg.textContent=error?'Foydalanuvchi huquqini tekshirishda xatolik: '+error.message:'Foydalanuvchilarni boshqarish faqat bosh administrator uchun.';
+ }
+ if(isAdmin){document.getElementById('nx-profile-error')?.remove();shell()}
+}
+const observer=new MutationObserver(()=>{
+ const host=document.getElementById('ent-settings');
+ if(!host)return;
+ if(isAdmin&&!document.getElementById('nx-users'))shell();
+});
+observer.observe(document.body,{subtree:true,childList:true});
+document.addEventListener('click',ev=>{if(ev.target.closest('[data-page="settings"]'))setTimeout(check,250)});
+sb.auth.onAuthStateChange(()=>setTimeout(check,350));
+setTimeout(check,450);
+
 })();
 </script></body></html>
