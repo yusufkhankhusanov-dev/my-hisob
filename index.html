@@ -714,4 +714,48 @@ sb.auth.onAuthStateChange(()=>setTimeout(check,350));
 setTimeout(check,450);
 
 })();
+</script><style>
+/* NAVORIX — xodim hududlari uchun zamonaviy tanlov */
+.nx-region-widget{position:relative;width:100%;font-family:inherit}
+.nx-region-widget select{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;left:0;top:0;margin:0!important;padding:0!important}
+.nx-region-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:39px;padding:10px 13px!important;margin:5px 0 12px!important;background:#fff!important;color:#172b4d!important;border:1px solid #cbd9ec!important;border-radius:10px!important;text-align:left;font-size:13px!important;font-weight:500;box-shadow:none!important;cursor:pointer}
+.nx-region-trigger:hover,.nx-region-trigger[aria-expanded="true"]{border-color:#2474d4!important;box-shadow:0 0 0 3px #2474d415!important}
+.nx-region-trigger svg{width:15px;height:15px;flex-shrink:0;transition:transform .18s}.nx-region-trigger[aria-expanded="true"] svg{transform:rotate(180deg)}
+.nx-region-menu{position:absolute;z-index:10020;top:calc(100% - 7px);left:0;right:0;background:#fff;border:1px solid #d9e4f2;border-radius:12px;padding:7px;box-shadow:0 16px 38px #0e2e5a30;display:none}
+.nx-region-widget.is-open .nx-region-menu{display:block}
+.nx-region-search{width:100%!important;box-sizing:border-box!important;margin:0 0 6px!important;border:1px solid #dce5f1!important;background:#f7faff!important;border-radius:8px!important;padding:10px 11px!important;font-size:13px!important;outline:none}
+.nx-region-search:focus{border-color:#3383df!important}
+.nx-region-options{max-height:218px;overflow-y:auto;overscroll-behavior:contain}
+.nx-region-item{display:block;width:100%;margin:1px 0!important;padding:10px 11px!important;border:0!important;border-radius:8px!important;background:transparent!important;color:#263b5c!important;text-align:left!important;font-size:13px!important;font-weight:500!important;box-shadow:none!important}
+.nx-region-item:hover,.nx-region-item[aria-selected="true"]{background:#eaf3ff!important;color:#1256ac!important}
+.nx-region-empty{padding:12px;color:#64748b;font-size:12px}
+</style>
+<script>
+(function(){
+ const ids=['nx-region','nx-profile-region'];
+ const chevron='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+ function closeAll(except){document.querySelectorAll('.nx-region-widget.is-open').forEach(w=>{if(w!==except){w.classList.remove('is-open');w.querySelector('.nx-region-trigger').setAttribute('aria-expanded','false')}})}
+ function setup(select){
+  if(!select||select.closest('.nx-region-widget'))return;
+  const wrap=document.createElement('div');wrap.className='nx-region-widget';select.parentNode.insertBefore(wrap,select);wrap.appendChild(select);
+  const trigger=document.createElement('button');trigger.type='button';trigger.className='nx-region-trigger';trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');wrap.appendChild(trigger);
+  const menu=document.createElement('div');menu.className='nx-region-menu';menu.innerHTML='<input class="nx-region-search" type="search" placeholder="Hududni qidirish..." aria-label="Hududni qidirish"><div class="nx-region-options" role="listbox"></div>';wrap.appendChild(menu);
+  const search=menu.querySelector('input'),options=menu.querySelector('.nx-region-options');
+  function sync(){trigger.innerHTML='<span>'+((select.selectedOptions[0]&&select.selectedOptions[0].textContent)||'Hududni tanlang')+'</span>'+chevron}
+  function render(){const term=search.value.trim().toLocaleLowerCase('uz');options.replaceChildren();let found=0;
+   Array.from(select.options).filter(o=>o.value&&o.textContent.toLocaleLowerCase('uz').includes(term)).forEach(o=>{found++;const b=document.createElement('button');b.type='button';b.className='nx-region-item';b.textContent=o.textContent;b.setAttribute('role','option');b.setAttribute('aria-selected',String(select.value===o.value));b.addEventListener('click',()=>{select.value=o.value;select.dispatchEvent(new Event('change',{bubbles:true}));sync();closeAll();search.value=''});options.appendChild(b)});
+   if(!found){const p=document.createElement('div');p.className='nx-region-empty';p.textContent='Hudud topilmadi';options.appendChild(p)}
+  }
+  trigger.addEventListener('click',()=>{const open=!wrap.classList.contains('is-open');closeAll();wrap.classList.toggle('is-open',open);trigger.setAttribute('aria-expanded',String(open));sync();if(open){search.value='';render();search.focus()}});
+  search.addEventListener('input',render);select.addEventListener('change',sync);sync();
+  // Tahrirlash oynasi ochilganda dastur orqali tanlangan hududni aks ettirish.
+  const obs=new MutationObserver(()=>{if(!wrap.classList.contains('is-open'))sync()});
+  const overlay=select.closest('.nx-overlay');if(overlay)obs.observe(overlay,{attributes:true,attributeFilter:['hidden','style','class']});
+ }
+ function init(){ids.forEach(id=>setup(document.getElementById(id)))}
+ const observer=new MutationObserver(()=>{if(ids.some(id=>{const el=document.getElementById(id);return el&&!el.closest('.nx-region-widget')}))init()});
+ observer.observe(document.body,{childList:true,subtree:true});init();
+ document.addEventListener('click',e=>{if(!e.target.closest('.nx-region-widget'))closeAll()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+})();
 </script></body></html>
