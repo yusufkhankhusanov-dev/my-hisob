@@ -960,7 +960,7 @@ function nxConfirmRemove(name){
 <script>
 /* Integration readiness only. No banking credentials are collected or persisted in the browser. */
 (function(){
- const markup=`<div class="ent-card"><h2>Integratsiyalar markazi</h2><p class="nx-intro">Tashqi savdo tizimi va Kapitalbank bilan kelgusida xavfsiz ulanish uchun tayyorlangan boshqaruv oynasi. Hozir hech qanday tashqi ma’lumot olinmaydi va bank hisobiga ulanish bajarilmaydi.</p><div class="nx-int-grid"><div class="nx-int-box"><h3>Tashqi savdo tizimi</h3><span class="nx-badge">Ulanmagan</span><p>Kontragentlar, aptekalar, buyurtmalar, qarzdorlik va tarixiy operatsiyalarni import qilish uchun.</p><label class="nx-int-field">API manzili<input placeholder="Bank yoki tizim tasdiqlagan API manzili" disabled></label><label class="nx-int-field">Ma’lumotlar qamrovi<input value="Kontragentlar, aptekalar, buyurtmalar, tarix" disabled></label><button class="nx-int-button" disabled>Ulanishni tekshirish</button><button class="nx-int-button" disabled>Sinxronlash</button></div><div class="nx-int-box"><h3>Kapitalbank</h3><span class="nx-badge">Ulanmagan</span><p>Bank tushumlari, ko‘chirmalar va operatsiyalarni kontragentlar bilan solishtirish uchun.</p><label class="nx-int-field">Bank API manzili<input placeholder="Rasmiy ulanishdan keyin kiritiladi" disabled></label><label class="nx-int-field">Hisob raqami<input placeholder="Bank ruxsatidan keyin tanlanadi" disabled></label><button class="nx-int-button" disabled>Ulanishni tekshirish</button><button class="nx-int-button" disabled>Tushumlarni yangilash</button></div></div><div class="nx-int-info">API kalitlari, tokenlar va bank maxfiy ma’lumotlari bu sahifaga kiritilmaydi. Ular faqat serverdagi himoyalangan sozlamalarda saqlanishi kerak. Tugmalar server integratsiyasi tayyor bo‘lmaguncha faol emas.</div></div><div class="ent-card nx-int-timeline"><h3>Sinxronlash nazorati</h3><div class="scroll"><table class="nx-int-table"><thead><tr><th>Manba</th><th>Holat</th><th>Oxirgi sinxronlash</th><th>Yozuvlar</th></tr></thead><tbody><tr><td>Tashqi savdo tizimi</td><td>Ulanmagan</td><td>—</td><td>—</td></tr><tr><td>Kapitalbank</td><td>Ulanmagan</td><td>—</td><td>—</td></tr></tbody></table></div><p class="ent-muted">Keyingi bosqich: server integratsiyasi, takroriy yozuvlardan himoya, STIR asosida moslashtirish, xatoliklar jurnali va sinxronlash tarixi.</p></div>`;
+ const markup=`<div class="ent-card"><h2>Integratsiyalar markazi</h2><p class="nx-intro">Ulanish ma’lumotlarini oldindan tayyorlang. Haqiqiy integratsiya faqat server qismi va rasmiy API ruxsatlari o‘rnatilgach ishga tushadi.</p><div class="nx-int-grid"><div class="nx-int-box"><h3>Tashqi savdo tizimi</h3><span class="nx-badge">Ulanmagan</span><p>Kontragentlar, aptekalar, buyurtmalar, qarzdorlik va tarixiy operatsiyalar.</p><label class="nx-int-field">API manzili<input id="nx-ext-api" type="url" placeholder="https://api.example.uz/..."></label><label class="nx-int-field">Ma’lumotlar qamrovi<input id="nx-ext-scope" value="Kontragentlar, aptekalar, buyurtmalar, tarix"></label><button type="button" class="nx-int-button" data-nx-save="ext">Sozlamalarni saqlash</button><button type="button" class="nx-int-button" data-nx-test="ext">Ulanishni tekshirish</button><button type="button" class="nx-int-button" disabled title="Server integratsiyasi tayyor bo‘lgach faollashadi">Sinxronlash</button></div><div class="nx-int-box"><h3>Kapitalbank</h3><span class="nx-badge">Ulanmagan</span><p>Bank tushumlari, ko‘chirmalar va to‘lovlar tarixini solishtirish.</p><label class="nx-int-field">Bank API manzili<input id="nx-bank-api" type="url" placeholder="Bank tasdiqlagan API manzili"></label><label class="nx-int-field">Hisob raqami<input id="nx-bank-account" inputmode="numeric" maxlength="30" placeholder="Bank hisob raqami"></label><button type="button" class="nx-int-button" data-nx-save="bank">Sozlamalarni saqlash</button><button type="button" class="nx-int-button" data-nx-test="bank">Ulanishni tekshirish</button><button type="button" class="nx-int-button" disabled title="Server integratsiyasi tayyor bo‘lgach faollashadi">Tushumlarni yangilash</button></div></div><p id="nx-int-message" role="status" aria-live="polite" style="padding:12px;color:#17456e;background:#eff6ff;border-radius:9px"></p><div class="nx-int-info">Hozirgi sozlamalar faqat shu brauzerda saqlanadi; boshqa qurilmaga o‘tmaydi. API kaliti, token, parol yoki bank maxfiy ma’lumotlarini bu yerga kiritmang. Haqiqiy ulanish server orqali amalga oshiriladi.</div></div><div class="ent-card nx-int-timeline"><h3>Sinxronlash nazorati</h3><div class="scroll"><table class="nx-int-table"><thead><tr><th>Manba</th><th>Holat</th><th>Oxirgi sinxronlash</th><th>Yozuvlar</th></tr></thead><tbody><tr><td>Tashqi savdo tizimi</td><td>Ulanmagan</td><td>—</td><td>—</td></tr><tr><td>Kapitalbank</td><td>Ulanmagan</td><td>—</td><td>—</td></tr></tbody></table></div><p class="ent-muted">Server ulanishi o‘rnatilgach sinxronlash tarixi va xatoliklar jurnali ishlaydi.</p></div>`;
  function mount(){
   const host=document.getElementById('ent-settings');
   if(!host)return;
@@ -975,6 +975,28 @@ function nxConfirmRemove(name){
   details.innerHTML='<summary style="cursor:pointer;padding:20px 24px;font-weight:750;color:#16365e;font-size:17px">Integratsiyalar <span style="font-size:12px;color:#71849b;font-weight:500;margin-left:8px">Tashqi tizim va Kapitalbank · Ulanmagan</span></summary><div style="padding:0 18px 18px" id="nx-settings-integration-body"></div>';
   details.querySelector('#nx-settings-integration-body').innerHTML=markup;
   host.appendChild(details);
+  const panel=details.querySelector('#nx-settings-integration-body');
+  const fields={ext:['nx-ext-api','nx-ext-scope'],bank:['nx-bank-api','nx-bank-account']};
+  for(const [group,ids] of Object.entries(fields)){
+    try { const saved=JSON.parse(localStorage.getItem('navorix_integration_draft_'+group)||'{}'); ids.forEach(id=>{if(typeof saved[id]==='string')panel.querySelector('#'+id).value=saved[id]}); }catch(e){}
+  }
+  const msg=panel.querySelector('#nx-int-message');
+  msg.textContent='Ulanishlar hozircha faol emas. Sozlamalarni tayyorlab saqlashingiz mumkin.';
+  panel.addEventListener('click',e=>{
+    const save=e.target.closest('[data-nx-save]');
+    const test=e.target.closest('[data-nx-test]');
+    if(save){
+      const group=save.dataset.nxSave, values={};
+      for(const id of fields[group]){
+        const input=panel.querySelector('#'+id);
+        if(input.type==='url' && input.value.trim() && !input.checkValidity()){msg.textContent='API manzilini to‘liq va to‘g‘ri kiriting.';input.focus();return;}
+        values[id]=input.value.trim();
+      }
+      try{localStorage.setItem('navorix_integration_draft_'+group,JSON.stringify(values));msg.textContent='Sozlamalar ushbu brauzerda saqlandi. Serverga yuborilmadi.';}
+      catch(err){msg.textContent='Saqlab bo‘lmadi: brauzer xotirasi cheklangan.';}
+    }
+    if(test){msg.textContent='Ulanishni tekshirish hozircha mavjud emas. Rasmiy API ruxsati va Supabase server funksiyasi sozlangach ishlaydi.';}
+  });
  }
  new MutationObserver(mount).observe(document.documentElement,{childList:true,subtree:true});mount();
 })();
