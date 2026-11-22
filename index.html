@@ -553,7 +553,7 @@ if(i===0){heading=region;let ds=dcDistricts(region),cs=clients.filter(c=>clientR
 else if(i===1){let d=entry.district,cs=dcDistrictClients(region,d),total=cs.reduce((n,c)=>n+dcClientDebt(c),0),unassigned=clients.filter(c=>clientRegion(c)===region&&!dcDrillData.assignments[dcClientKey(c)]?.district);heading=d;body=`<div class="dc-drill-crumb">${safe(region)} / ${safe(d)}</div><div class="dc-drill-summary">${dcStat(dcT('debt'),money(total))}${dcStat(dcT('pharmacies'),cs.length+' ta')}</div><div class="dc-drill-actions" style="margin-bottom:14px"><select id="dcAssignClient" style="flex:1;min-width:200px;margin:0"><option value="">Dorixonani biriktirish...</option>${unassigned.map(c=>`<option value="${safe(dcClientKey(c))}">${safe(c.nomi)} (${safe(c.inn)})</option>`).join('')}</select><button class="dc-drill-btn" data-dc-action="assign">${dcT('save')}</button></div><div class="dc-drill-list">${cs.map(c=>`<button class="dc-drill-item" data-dc-action="pharmacy" data-dc-client="${safe(dcClientKey(c))}"><span><b>${safe(c.nomi)}</b><small>INN: ${safe(c.inn)}</small></span><span class="dc-drill-money">${money(dcClientDebt(c))}</span></button>`).join('')}</div>${cs.length?'':`<div class="dc-drill-blank">${dcT('emptyPh')}</div>`}`}
 else{let c=clients.find(c=>dcClientKey(c)===entry.client),a=dcDrillData.assignments[entry.client]||{};heading=c?.nomi||'Dorixona';if(c)body=`<div class="dc-drill-crumb">${safe(region)} / ${safe(dcDrillStack[1].district)}</div><div class="dc-drill-summary">${dcStat(dcT('debt'),money(dcClientDebt(c)))}${dcStat(dcT('overdue'),money(dcClientOverdue(c)))}</div><form id="dcMpForm"><div class="dc-drill-fields"><label>${dcT('manager')}<input name="mp" value="${safe(a.mp||'')}" placeholder="F.I.Sh."></label><label>${dcT('phone')}<input name="phone" value="${safe(a.phone||'')}" placeholder="+998..."></label><label>${dcT('telegram')}<input name="telegram" value="${safe(a.telegram||'')}" placeholder="username"></label></div><div class="dc-drill-actions"><button type="submit" class="dc-drill-btn">${dcT('edit')}</button><button type="button" class="dc-drill-btn light" data-dc-action="remind">${dcT('remind')}</button><button type="button" class="dc-drill-btn light" data-dc-action="unassign">Tumandan ajratish</button></div></form><p class="dc-drill-note">Telegram orqali yuborishdan oldin xabar matnini tekshiring. Xabar avtomatik jo‘natilmaydi.</p>`}
 p.innerHTML=`<div class="dc-drill-head"><div><small>${i+1} / 3</small><h3>${safe(heading)}</h3></div><button class="dc-drill-btn light" data-dc-action="back">← ${dcT('back')}</button></div><div class="dc-drill-body">${body}</div>`});}
-function dcDrillClick(e){let a=e.target.closest('[data-dc-action]');if(!a)return;let type=a.dataset.dcAction,region=dcDrillStack[0]?.region;if(type==='back'){dcDrillStack.pop();dcRenderDrill();return}if(type==='district'){dcDrillPush({district:a.dataset.dcDistrict});return}if(type==='pharmacy'){dcDrillPush({client:a.dataset.dcClient});return}if(type==='add-district'){let name=prompt(dcT('district'));if(!name)return;name=name.trim().replace(/\s+/g,' ');if(!name||name.length>90)return;let ds=dcDrillData.districts[region]||(dcDrillData.districts[region]=[]);if(!ds.some(x=>x.toLocaleLowerCase()===name.toLocaleLowerCase())){ds.push(name);dcPersist()}dcRenderDrill();return}if(type==='assign'){let key=$('dcAssignClient')?.value;if(!key)return;let c=clients.find(x=>dcClientKey(x)===key);if(!c||clientRegion(c)!==region)return;dcDrillData.assignments[key]={...(dcDrillData.assignments[key]||{}),district:dcDrillStack[1].district};dcPersist();dcRenderDrill();return}if(type==='unassign'){let key=dcDrillStack[2].client;if(!confirm('Dorixonani tumandan ajratasizmi?'))return;delete dcDrillData.assignments[key].district;dcPersist();dcDrillStack.pop();dcRenderDrill();return}if(type==='remind'){let c=clients.find(x=>dcClientKey(x)===dcDrillStack[2].client);if(!c)return;let a=dcDrillData.assignments[dcClientKey(c)]||{},message=`Assalomu alaykum${a.mp?', '+a.mp:''}.\n${c.nomi} (INN: ${c.inn}) bo‘yicha qarzdorlik: ${money(dcClientDebt(c))}.\nMuddati o‘tgan: ${money(dcClientOverdue(c))}.\nIltimos, to‘lov holatini aniqlab, ma’lumot bering.\nDAANTEC CONTROL`;navigator.clipboard?.writeText(message).then(()=>showPremiumToast(dcT('copied'))).catch(()=>prompt('Eslatma matni:',message));let user=String(a.telegram||'').trim().replace(/^@/,'').replace(/[^a-zA-Z0-9_]/g,'');if(user)window.open('https://t.me/'+encodeURIComponent(user),'_blank','noopener,noreferrer');else prompt('Telegram username kiritilmagan. Eslatma matnini nusxalang:',message);return}}
+function dcDrillClick(e){let a=e.target.closest('[data-dc-action]');if(!a)return;let type=a.dataset.dcAction,region=dcDrillStack[0]?.region;if(type==='back'){dcDrillStack.pop();dcRenderDrill();return}if(type==='district'){dcDrillPush({district:a.dataset.dcDistrict});return}if(type==='pharmacy'){dcDrillPush({client:a.dataset.dcClient});return}if(type==='add-district'){dcOpenDistrictDialog(region);return}if(type==='assign'){let key=$('dcAssignClient')?.value;if(!key)return;let c=clients.find(x=>dcClientKey(x)===key);if(!c||clientRegion(c)!==region)return;dcDrillData.assignments[key]={...(dcDrillData.assignments[key]||{}),district:dcDrillStack[1].district};dcPersist();dcRenderDrill();return}if(type==='unassign'){let key=dcDrillStack[2].client;if(!confirm('Dorixonani tumandan ajratasizmi?'))return;delete dcDrillData.assignments[key].district;dcPersist();dcDrillStack.pop();dcRenderDrill();return}if(type==='remind'){let c=clients.find(x=>dcClientKey(x)===dcDrillStack[2].client);if(!c)return;let a=dcDrillData.assignments[dcClientKey(c)]||{},message=`Assalomu alaykum${a.mp?', '+a.mp:''}.\n${c.nomi} (INN: ${c.inn}) bo‘yicha qarzdorlik: ${money(dcClientDebt(c))}.\nMuddati o‘tgan: ${money(dcClientOverdue(c))}.\nIltimos, to‘lov holatini aniqlab, ma’lumot bering.\nDAANTEC CONTROL`;navigator.clipboard?.writeText(message).then(()=>showPremiumToast(dcT('copied'))).catch(()=>prompt('Eslatma matni:',message));let user=String(a.telegram||'').trim().replace(/^@/,'').replace(/[^a-zA-Z0-9_]/g,'');if(user)window.open('https://t.me/'+encodeURIComponent(user),'_blank','noopener,noreferrer');else prompt('Telegram username kiritilmagan. Eslatma matnini nusxalang:',message);return}}
 function dcDrillSubmit(e){if(e.target.id!=='dcMpForm')return;e.preventDefault();let key=dcDrillStack[2]?.client;if(!key)return;let f=new FormData(e.target),a=dcDrillData.assignments[key]||{};a.mp=String(f.get('mp')||'').trim().slice(0,100);a.phone=String(f.get('phone')||'').trim().slice(0,50);a.telegram=String(f.get('telegram')||'').trim().replace(/^@/,'').slice(0,80);dcDrillData.assignments[key]=a;dcPersist();showPremiumToast('Ma’lumot saqlandi');dcRenderDrill()}
 document.addEventListener('change',e=>{if(e.target.id==='dcDrillLanguage'){dcDrillLang=e.target.value;dcRenderDrill()}});
 
@@ -808,5 +808,71 @@ function nxConfirmRemove(name){
     cancel.addEventListener('click',onCancel);accept.addEventListener('click',onAccept);overlay.addEventListener('click',onOutside);document.addEventListener('keydown',onKey);
   });
 }
+</script>
+
+<style>
+/* NAVORIX — tuman qo‘shish uchun zamonaviy muloqot oynasi */
+#nx-district-overlay{position:fixed;inset:0;z-index:12000;background:rgba(8,24,49,.55);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+#nx-district-overlay.nx-visible{display:flex}
+#nx-district-dialog{width:min(100%,420px);box-sizing:border-box;background:#fff;border:1px solid #e0e9f5;border-radius:18px;box-shadow:0 24px 85px #071b3550;padding:25px;color:#132b4c}
+#nx-district-dialog h3{font-size:19px;margin:0 0 7px;font-weight:750}
+#nx-district-dialog .nx-district-sub{font-size:13px;color:#667b98;margin:0 0 22px;line-height:1.5}
+#nx-district-dialog label{display:block;font-size:13px;font-weight:650;margin:0 0 7px}
+#nx-district-name{display:block;width:100%;margin:0;padding:12px 13px;border:1px solid #cbd9eb;border-radius:10px;font-size:14px;outline:none;background:#fbfdff;color:#183454}
+#nx-district-name:focus{border-color:#2777d4;box-shadow:0 0 0 3px #2777d41a}
+#nx-district-error{min-height:20px;color:#bf3043;font-size:12px;margin-top:7px}
+#nx-district-dialog .nx-district-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}
+#nx-district-dialog button{margin:0;padding:10px 16px;border-radius:9px;font-size:13px;font-weight:650}
+#nx-district-cancel{background:#f1f5fa;color:#2d4667;border:1px solid #dce5f0}
+#nx-district-save{background:#1769cf;color:#fff;border:1px solid #1769cf}
+</style>
+<div id="nx-district-overlay" aria-hidden="true">
+  <form id="nx-district-dialog" role="dialog" aria-modal="true" aria-labelledby="nx-district-title">
+    <h3 id="nx-district-title">Tuman qo‘shish</h3>
+    <p class="nx-district-sub" id="nx-district-region">Hududga yangi tuman yoki shahar kiriting.</p>
+    <label for="nx-district-name">Tuman yoki shahar nomi</label>
+    <input id="nx-district-name" type="text" maxlength="90" autocomplete="off" placeholder="Masalan: Chilonzor tumani" required>
+    <div id="nx-district-error" aria-live="polite"></div>
+    <div class="nx-district-actions"><button type="button" id="nx-district-cancel">Bekor qilish</button><button type="submit" id="nx-district-save">Saqlash</button></div>
+  </form>
+</div>
+<script>
+(function(){
+  const overlay=document.getElementById('nx-district-overlay');
+  const form=document.getElementById('nx-district-dialog');
+  const input=document.getElementById('nx-district-name');
+  const error=document.getElementById('nx-district-error');
+  const cancel=document.getElementById('nx-district-cancel');
+  const save=document.getElementById('nx-district-save');
+  let activeRegion='',previousFocus=null;
+  window.dcOpenDistrictDialog=function(region){
+    if(!region)return;
+    activeRegion=region;previousFocus=document.activeElement;
+    document.getElementById('nx-district-region').textContent=region+' hududiga yangi tuman yoki shahar qo‘shing.';
+    input.value='';error.textContent='';
+    overlay.classList.add('nx-visible');overlay.setAttribute('aria-hidden','false');
+    input.focus();
+  };
+  function close(){overlay.classList.remove('nx-visible');overlay.setAttribute('aria-hidden','true');if(previousFocus?.isConnected)previousFocus.focus()}
+  cancel.addEventListener('click',close);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+  document.addEventListener('keydown',e=>{
+    if(!overlay.classList.contains('nx-visible'))return;
+    if(e.key==='Escape'){e.preventDefault();close()}
+    if(e.key==='Tab'){
+      const focusable=[input,cancel,save],index=focusable.indexOf(document.activeElement);
+      if(e.shiftKey&&index===0){e.preventDefault();save.focus()}
+      else if(!e.shiftKey&&index===2){e.preventDefault();input.focus()}
+    }
+  });
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const name=input.value.trim().replace(/\s+/g,' ');
+    if(!name||name.length>90){error.textContent='Tuman nomini to‘g‘ri kiriting.';input.focus();return}
+    const ds=dcDrillData.districts[activeRegion]||(dcDrillData.districts[activeRegion]=[]);
+    if(ds.some(x=>x.toLocaleLowerCase()===name.toLocaleLowerCase())){error.textContent='Bu tuman ro‘yxatda mavjud.';input.focus();return}
+    ds.push(name);dcPersist();close();dcRenderDrill();
+  });
+})();
 </script>
 </body></html>
