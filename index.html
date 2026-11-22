@@ -604,7 +604,26 @@ async function reload(){
  }catch(err){badge.textContent='Yangilashda xatolik';showPremiumToast(err.message||'Ma’lumotlarni yuklab bo‘lmadi',true);console.error('DAANTEC CONTROL yangilash:',err)}
  finally{button.disabled=false;button.textContent='Yangilash';reloadBusy=false}
 }
-function navigate(p){page=p;document.querySelectorAll('.ent-section').forEach(e=>e.classList.toggle('active',e.id==='ent-'+p));document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===p));$('entTitle').textContent=MENU.find(x=>x[0]===p)?.[1]||'Boshqaruv paneli';$('entSubtitle').textContent='DAANTEC CONTROL — moliyaviy nazorat va tahlil';$('entSidebar').classList.remove('open');if(p==='promises'||p==='dashboard'||p==='regions')reload()}
+function navigate(p, fromHistory=false){if(!MENU.some(x=>x[0]===p))p='dashboard';if(!fromHistory && p!==page){history.pushState({navorixPage:p,navorixNavigation:true},'',location.pathname+location.search+location.hash)}page=p;document.querySelectorAll('.ent-section').forEach(e=>e.classList.toggle('active',e.id==='ent-'+p));document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===p));$('entTitle').textContent=MENU.find(x=>x[0]===p)?.[1]||'Boshqaruv paneli';$('entSubtitle').textContent='DAANTEC CONTROL — moliyaviy nazorat va tahlil';$('entSidebar').classList.remove('open');if(p==='promises'||p==='dashboard'||p==='regions')reload()}
+// NAVORIX: brauzer Orqaga/Oldinga tugmalari uchun ichki sahifa tarixi.
+// Boshlang'ich qo'riqchi holat tashqi saytga tasodifan chiqib ketishni to'xtatadi.
+(function setupNavorixHistory(){
+  const base={navorixPage:'dashboard',navorixNavigation:true,navorixBoundary:true};
+  history.replaceState(base,'',location.pathname+location.search+location.hash);
+  history.pushState({navorixPage:'dashboard',navorixNavigation:true},'',location.pathname+location.search+location.hash);
+  window.addEventListener('popstate',function(event){
+    const state=event.state;
+    if(state&&state.navorixBoundary){
+      history.pushState({navorixPage:'dashboard',navorixNavigation:true},'',location.pathname+location.search+location.hash);
+      navigate('dashboard',true);
+      return;
+    }
+    if(state&&state.navorixNavigation){navigate(state.navorixPage||'dashboard',true);return;}
+    // Begona history holati kelganda ichki boshlang'ich sahifaga qaytamiz.
+    history.pushState({navorixPage:'dashboard',navorixNavigation:true},'',location.pathname+location.search+location.hash);
+    navigate('dashboard',true);
+  });
+})();
 el.addEventListener('click',e=>{let b=e.target.closest('[data-page]');if(b){navigate(b.dataset.page);return}let mapRegion=e.target.closest('[data-dc-region]');if(mapRegion){selectedRegion=mapRegion.dataset.dcRegion;dcRegionInfo();let sel=$('entRegionSelect');if(sel)sel.value=selectedRegion;regionDetail();dcOpenRegion(selectedRegion);return}let reg=e.target.closest('[data-openregion]');if(reg){selectedRegion=reg.dataset.openregion;navigate('regions');draw();return}let cl=e.target.closest('[data-client]');if(cl){let c=clients.find(c=>String(c.id)===cl.dataset.client);if(c){current=c;renderDetail();$('detail').classList.remove('hidden')}return}let ep=e.target.closest('[data-editpromise]');if(ep){let id=ep.dataset.editpromise;let tr=[...document.querySelectorAll('#ctRows [data-edit]')].find(b=>b.dataset.edit===id);if(tr){tr.click()}else{$('tabControl').click();setTimeout(()=>{let b=[...document.querySelectorAll('#ctRows [data-edit]')].find(b=>b.dataset.edit===id);b?.click()},400)}return}let ex=e.target.closest('[data-export]');if(ex){exportReport(ex.dataset.export);return}});
 $('entReload').onclick=reload;$('entLogout').onclick=()=>$('logout').click();$('entHamb').onclick=()=>$('entSidebar').classList.toggle('open');
 sb.auth.onAuthStateChange((ev,session)=>{if(session)setTimeout(reload,200)});sb.auth.getSession().then(({data})=>{if(data.session)setTimeout(reload,250)});
