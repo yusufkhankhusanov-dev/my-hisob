@@ -773,15 +773,29 @@ function status(t, error = false) {
     if (!el) return;
 
     clearTimeout(nxStatusTimer);
+    el.getAnimations().forEach(a => a.cancel());
 
     el.textContent = t;
     el.style.color = error ? '#b91c1c' : '#155e75';
     el.style.display = 'block';
+    el.style.opacity = '1';
+
+    el.animate(
+        [{ opacity: 0 }, { opacity: 1 }],
+        { duration: 300, easing: 'ease-out' }
+    );
 
     if (!error) {
         nxStatusTimer = setTimeout(() => {
-            el.textContent = '';
-            el.style.display = 'none';
+            const anim = el.animate(
+                [{ opacity: 1 }, { opacity: 0 }],
+                { duration: 400, easing: 'ease-in' }
+            );
+
+            anim.onfinish = () => {
+                el.style.display = 'none';
+                el.textContent = '';
+            };
         }, 3000);
     }
 }
