@@ -1111,4 +1111,116 @@ function nxConfirmRemove(name){
  }
  new MutationObserver(mount).observe(document.documentElement,{childList:true,subtree:true});mount();
 })();
+</script><style>
+#nxSidebarToggle {
+    display: none;
+    width: 36px;
+    height: 34px;
+    margin: 0 0 12px auto;
+    border: 1px solid #ffffff30;
+    border-radius: 8px;
+    background: #ffffff10;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+@media (min-width: 1100px) {
+    #nxSidebarToggle {
+        display: block;
+    }
+
+    #enterprise .ent-sidebar {
+        transition: width .25s ease, flex-basis .25s ease;
+    }
+
+    #enterprise.nx-collapsed .ent-sidebar {
+        width: 70px !important;
+        min-width: 70px !important;
+        flex: 0 0 70px !important;
+        padding: 15px 8px !important;
+        box-sizing: border-box;
+    }
+
+    #enterprise.nx-collapsed .ent-main {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    #enterprise.nx-collapsed .ent-logo,
+    #enterprise.nx-collapsed .ent-caption,
+    #enterprise.nx-collapsed .ent-product-name {
+        display: none !important;
+    }
+
+    #enterprise.nx-collapsed .ent-nav button {
+        font-size: 0 !important;
+        gap: 0 !important;
+        justify-content: center !important;
+        padding: 12px !important;
+        overflow: hidden;
+    }
+
+    #enterprise.nx-collapsed .ent-nav button svg {
+        width: 21px !important;
+        height: 21px !important;
+    }
+
+    #enterprise.nx-collapsed .ent-sidebar-footer button {
+        font-size: 0 !important;
+    }
+
+    #enterprise.nx-collapsed .ent-sidebar-footer button::after {
+        content: '↪';
+        font-size: 22px;
+    }
+
+    #enterprise.nx-collapsed #nxSidebarToggle {
+        margin: 0 auto 15px;
+    }
+}
+</style>
+
+<script>
+(function () {
+    function initSidebar() {
+        const root = document.getElementById('enterprise');
+        const sidebar = document.getElementById('entSidebar');
+
+        if (!root || !sidebar) return;
+        if (document.getElementById('nxSidebarToggle')) return;
+
+        const btn = document.createElement('button');
+        btn.id = 'nxSidebarToggle';
+        btn.type = 'button';
+
+        sidebar.prepend(btn);
+
+        sidebar.querySelectorAll('.ent-nav button').forEach(b => {
+            b.title = b.textContent.trim();
+        });
+
+        function update(collapsed) {
+            root.classList.toggle('nx-collapsed', collapsed);
+            btn.textContent = collapsed ? '»' : '«';
+            btn.title = collapsed ? 'Menyuni ochish' : 'Menyuni yig‘ish';
+            btn.setAttribute('aria-label', btn.title);
+            btn.setAttribute('aria-expanded', String(!collapsed));
+        }
+
+        update(localStorage.getItem('nx-sidebar') === '1');
+
+        btn.onclick = function () {
+            const collapsed = !root.classList.contains('nx-collapsed');
+            localStorage.setItem('nx-sidebar', collapsed ? '1' : '0');
+            update(collapsed);
+        };
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSidebar);
+    } else {
+        initSidebar();
+    }
+})();
 </script></body></html>
