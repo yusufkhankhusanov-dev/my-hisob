@@ -1223,4 +1223,41 @@ function nxConfirmRemove(name){
         initSidebar();
     }
 })();
-</script></body></html>
+</script><style>
+#enterprise .ent-sidebar {
+    scrollbar-width: none;
+}
+
+#enterprise .ent-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+@media (min-width: 1100px) {
+    #enterprise .ent-sidebar {
+        position: sticky;
+    }
+
+    #enterprise #nxSidebarToggle {
+        position: absolute;
+        top: 50%;
+        right: 3px;
+        transform: translateY(-50%);
+        width: 16px !important;
+        height: 28px !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 5px;
+        background: #ffffff12 !important;
+        color: #b9d8ef;
+        font-size: 13px !important;
+        box-shadow: none !important;
+        outline: none;
+    }
+
+    #enterprise #nxSidebarToggle:hover {
+        background: #ffffff30 !important;
+    }
+}
+</style></body></html>
