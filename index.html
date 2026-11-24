@@ -1387,4 +1387,40 @@ function nxConfirmRemove(name){
         font-size: 0 !important;
     }
 }
-</style></body></html>
+</style><style>
+#enterprise .ent-logo {
+    padding: 18px 8px 12px !important;
+}
+
+#enterprise .ent-daantec-original {
+    width: 100% !important;
+    max-width: 250px !important;
+    height: auto !important;
+    object-fit: contain !important;
+    filter: none !important;
+    margin: 0 auto !important;
+}
+</style>
+
+<script>
+(function () {
+    function updateNavorixLogo() {
+        const logo = document.querySelector(
+            '#enterprise .ent-daantec-original'
+        );
+
+        if (logo) {
+            logo.src = './navorix-logo.png';
+            logo.alt = 'NAVORIX';
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded', updateNavorixLogo
+        );
+    } else {
+        updateNavorixLogo();
+    }
+})();
+</script></body></html>
