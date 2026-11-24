@@ -694,9 +694,11 @@ function navigate(p, fromHistory=false){if(p==='integrations'&&document.querySel
 // NAVORIX: brauzer Orqaga/Oldinga tugmalari uchun ichki sahifa tarixi.
 // Boshlang'ich qo'riqchi holat tashqi saytga tasodifan chiqib ketishni to'xtatadi.
 (function setupNavorixHistory(){
-  const base={navorixPage:'dashboard',navorixNavigation:true,navorixBoundary:true};
+  const savedPage = history.state?.navorixPage || 'dashboard';
+const base={navorixPage:'dashboard',navorixNavigation:true,navorixBoundary:true};
   history.replaceState(base,'',location.pathname+location.search+location.hash);
-  history.pushState({navorixPage:'dashboard',navorixNavigation:true},'',location.pathname+location.search+location.hash);
+history.pushState({navorixPage:savedPage,navorixNavigation:true},'',location.pathname+location.search+location.hash);
+navigate(savedPage,true);
   window.addEventListener('popstate',function(event){
     const state=event.state;
     if(state&&state.navorixBoundary){
